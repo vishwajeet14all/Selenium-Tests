@@ -155,3 +155,4 @@ The supplied Cypress flow does not show a phone-number field. The phone-number v
 - `WebDriverWait` is used for interaction and dynamic validation feedback. No `Thread.sleep()` or implicit wait is used.
 - `ScreenshotListener` captures the browser state automatically when a test fails.
 - Test data generates a unique email address to avoid registration collisions.
+
