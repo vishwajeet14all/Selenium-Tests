@@ -2,15 +2,41 @@
 
 Selenium automation assignment implemented with Java 17, Maven, TestNG, Chrome, WebDriverManager, explicit waits, and the Page Object Model (POM).
 
-## Coverage
+## Implementation Status
 
+### Implemented
+
+- Maven project using Java 17, Selenium, TestNG, WebDriverManager, and Chrome
+- Page Object Model: `BaseTest`, `RegistrationPage`, `RegistrationTest`, and reusable utilities
+- Dev and prod URL profiles, with system-property and environment-variable overrides
 - Valid registration through the email-verification screen
-- Empty mandatory fields
-- Invalid email format
-- Password mismatch
-- Weak password
-- Terms and Conditions not accepted
-- Failure screenshots and TestNG HTML reports
+- Empty-form validation by verifying the Register button is disabled
+- Invalid email validation through Angular's `is-invalid` state
+- Password mismatch validation by verifying the Register button remains disabled
+- Weak-password validation through Angular's `is-invalid` state
+- Terms and Conditions validation by verifying the Register button remains disabled
+- Explicit waits for page interaction and dynamic validation; no `Thread.sleep()` or implicit wait
+- TestNG suite configuration, Surefire/TestNG HTML reports, and automatic failure screenshots
+- Local Git repository initialized and pushed to GitHub
+
+### Verified Result
+
+The dev suite was executed with:
+
+```bash
+mvn clean test -Denv=dev
+```
+
+Result: **6 tests run, 0 failures, 0 errors, 0 skipped.**
+
+### Not Implemented
+
+The assignment sheet lists fields that do not appear in the supplied registration AUT or Cypress selectors. They are intentionally not implemented because no reliable UI locator or behavior is available:
+
+- Organization name
+- Phone number and phone-number validation
+- Gender selection
+- Completing email-code verification; the suite validates the verification screen and prefilled email only
 
 ## Project Structure
 
@@ -19,13 +45,17 @@ Selenium/
 |- pom.xml
 |- testng.xml
 |- README.md
-`- src/test/java/com/genai/
-   |- base/BaseTest.java
-   |- pages/RegistrationPage.java
-   |- tests/RegistrationTest.java
-   `- utils/
-      |- Config.java
-      `- ScreenshotListener.java
+`- src/test/
+   |- java/com/genai/
+   |  |- base/BaseTest.java
+   |  |- pages/RegistrationPage.java
+   |  |- tests/RegistrationTest.java
+   |  `- utils/
+   |     |- Config.java
+   |     `- ScreenshotListener.java
+   `- resources/config/
+      |- dev.properties
+      `- prod.properties
 ```
 
 ## Prerequisites
@@ -70,9 +100,11 @@ mvn clean test -Denv=dev -Dheadless=true
 - TestNG and Surefire HTML reports: `target/surefire-reports/`
 - Failure screenshots: `target/screenshots/`
 
-## AUT Locator Configuration
+## AUT Scope And Locators
 
-`RegistrationPage` now uses the supplied AUT selectors: `First Name`, email input, `Country of Nationality`, `Password`, `Confirm Password`, agreement checkbox, the Angular `app-button` register control, and the email-verification screen.
+`RegistrationPage` uses the supplied AUT selectors: `First Name`, last name, email input, `Country of Nationality`, `Password`, `Confirm Password`, agreement checkbox, the Angular `app-button` Register control, email-verification screen, and `.toast-title` / `.toast-message` success notifications.
+
+`getValidationMessages()` collects visible text from common validation-message patterns: alert roles, Angular Material errors, and common error-message CSS classes. `getToastMessage()` fetches the visible `.toast-message` text, including the production message shown in the supplied screenshot: `"email" must be a valid email`. The dev invalid-email test uses the confirmed Angular `is-invalid` state because its API does not display that toast for the same input.
 
 The supplied Cypress flow does not show a phone-number field. The phone-number validation case was removed rather than retaining a locator that cannot work against this AUT. The production profile currently uses `/auth/login`; change it to the production registration route if login does not redirect to the registration form.
 
