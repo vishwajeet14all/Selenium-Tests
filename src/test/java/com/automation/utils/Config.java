@@ -1,4 +1,4 @@
-package com.genai.utils;
+package com.automation.utils;
 
 import java.io.IOException;
 import java.io.InputStream;

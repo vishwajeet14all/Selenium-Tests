@@ -1,6 +1,6 @@
-package com.genai.base;
+package com.automation.base;
 
-import com.genai.utils.Config;
+import com.automation.utils.Config;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;

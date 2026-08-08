@@ -1,6 +1,6 @@
-package com.genai.utils;
+package com.automation.utils;
 
-import com.genai.base.BaseTest;
+import com.automation.base.BaseTest;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;

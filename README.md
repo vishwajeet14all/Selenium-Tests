@@ -46,7 +46,7 @@ Selenium/
 |- testng.xml
 |- README.md
 `- src/test/
-   |- java/com/genai/
+   |- java/com/automation/
    |  |- base/BaseTest.java
    |  |- pages/RegistrationPage.java
    |  |- tests/RegistrationTest.java

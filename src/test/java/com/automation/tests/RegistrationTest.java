@@ -1,7 +1,7 @@
-package com.genai.tests;
+package com.automation.tests;
 
-import com.genai.base.BaseTest;
-import com.genai.pages.RegistrationPage;
+import com.automation.base.BaseTest;
+import com.automation.pages.RegistrationPage;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

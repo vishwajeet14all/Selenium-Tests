@@ -1,4 +1,4 @@
-package com.genai.pages;
+package com.automation.pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -66,7 +66,6 @@ public class RegistrationPage {
     public void acceptAgreement() {
         WebElement checkbox = wait.until(ExpectedConditions.presenceOfElementLocated(agreement));
         if (!checkbox.isSelected()) {
-            // The native input is visually hidden behind the custom agreement control.
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", checkbox);
         }
     }
