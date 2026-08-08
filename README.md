@@ -3,6 +3,17 @@
 Selenium automation assignment implemented with Java 17, Maven, TestNG, Chrome, WebDriverManager, explicit waits, and the Page Object Model (POM).
 # Video Url -> https://drive.google.com/file/d/185-jqNC1FGz9nVvBCdTwSLzIwMr_G4WP/view?usp=sharing
 
+## Tech Stack
+
+* **Language:** Java 17
+* **Automation Tool:** Selenium WebDriver
+* **Test Framework:** TestNG
+* **Build Tool:** Maven
+* **Browser:** Google Chrome
+* **Driver Management:** WebDriverManager
+* **Design Pattern:** Page Object Model (POM)
+* **Version Control:** Git / GitHub
+
 ## Implementation Status
 
 ### Implemented
