@@ -1,6 +1,7 @@
 # Registration Page Automation
 
 Selenium automation assignment implemented with Java 17, Maven, TestNG, Chrome, WebDriverManager, explicit waits, and the Page Object Model (POM).
+# Video Url -> https://drive.google.com/file/d/185-jqNC1FGz9nVvBCdTwSLzIwMr_G4WP/view?usp=sharing
 
 ## Implementation Status
 
