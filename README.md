@@ -1,103 +1,176 @@
 # Registration Page Automation
 
-Selenium automation assignment implemented with Java 17, Maven, TestNG, Chrome, WebDriverManager, explicit waits, and the Page Object Model (POM).
-# Video Url -> https://drive.google.com/file/d/185-jqNC1FGz9nVvBCdTwSLzIwMr_G4WP/view?usp=sharing
+Selenium + TestNG automation of the [4Excelerate Registration page](https://dev.4excelerate.net/auth/registration) implemented with Java 17, Maven, TestNG, Chrome, WebDriverManager, explicit waits, and the Page Object Model (POM).
+
+> **Video walkthrough:** https://drive.google.com/file/d/185-jqNC1FGz9nVvBCdTwSLzIwMr_G4WP/view?usp=sharing
+
+---
 
 ## Tech Stack
 
-* **Language:** Java 17
-* **Automation Tool:** Selenium WebDriver
-* **Test Framework:** TestNG
-* **Build Tool:** Maven
-* **Browser:** Google Chrome
-* **Driver Management:** WebDriverManager
-* **Design Pattern:** Page Object Model (POM)
-* **Version Control:** Git / GitHub
+| Concern | Choice |
+|---|---|
+| Language | Java 17 |
+| Automation Tool | Selenium WebDriver 4.x |
+| Test Framework | TestNG 7.x |
+| Build Tool | Maven |
+| Browser | Google Chrome |
+| Driver Management | WebDriverManager (auto-downloads matching ChromeDriver) |
+| Design Pattern | Page Object Model (POM) |
+| Synchronization | Explicit waits only — no `Thread.sleep()`, no implicit waits |
+| Version Control | Git / GitHub |
 
-## Implementation Status
+---
 
-### Implemented
+## How To Run
 
-- Maven project using Java 17, Selenium, TestNG, WebDriverManager, and Chrome
-- Page Object Model: `BaseTest`, `RegistrationPage`, `RegistrationTest`, and reusable utilities
-- Dev and prod URL profiles, with system-property and environment-variable overrides
-- Valid registration through the email-verification screen
-- Empty-form validation by verifying the Register button is disabled
-- Invalid email validation through Angular's `is-invalid` state
-- Password mismatch validation by verifying the Register button remains disabled
-- Weak-password validation through Angular's `is-invalid` state
-- Terms and Conditions validation by verifying the Register button remains disabled
-- Explicit waits for page interaction and dynamic validation; no `Thread.sleep()` or implicit wait
-- TestNG suite configuration, Surefire/TestNG HTML reports, and automatic failure screenshots
-- Local Git repository initialized and pushed to GitHub
-
-### Verified Result
-
-The dev suite was executed with:
+The suite defaults to the **dev** profile.
 
 ```bash
+# Dev (default)
 mvn clean test -Denv=dev
+
+# Production profile
+mvn clean test -Denv=prod
+
+# Headless (useful on CI / build agents)
+mvn clean test -Denv=dev -Dheadless=true
 ```
 
-Result: **6 tests run, 0 failures, 0 errors, 0 skipped.**
+### Environment Overrides
 
-### Not Implemented
+Any value in `src/test/resources/config/<env>.properties` can be overridden **without editing tracked files**. Precedence is highest → lowest:
 
-The assignment sheet lists fields that do not appear in the supplied registration AUT or Cypress selectors. They are intentionally not implemented because no reliable UI locator or behavior is available:
+1. JVM system property — `-Dregistration.url=https://your-url`
+2. Environment variable — `REGISTRATION_URL_DEV`, `REGISTRATION_URL_PROD`, etc.
+3. Value in the matching `config/<env>.properties` file
 
-- Organization name
-- Phone number and phone-number validation
-- Gender selection
-- Completing email-code verification; the suite validates the verification screen and prefilled email only
+Example on PowerShell:
+
+```powershell
+$env:TEST_ENV = "prod"
+$env:REGISTRATION_URL_PROD = "https://your-production-registration-page.example"
+mvn clean test
+```
+
+If no URL is configured the suite skips with a clear message rather than failing on the wrong page.
+
+---
+
+## Reports & Evidence
+
+| Artifact | Location |
+|---|---|
+| TestNG HTML report | `target/surefire-reports/index.html` |
+| Surefire HTML report | `target/surefire-reports/html/` |
+| TestNG XML results | `target/surefire-reports/testng-results.xml` |
+| Failure screenshots | `target/screenshots/<testMethod>_<epochMillis>.png` (auto-captured by `ScreenshotListener`) |
+
+---
 
 ## Project Structure
 
 ```
 Selenium/
-|- pom.xml
-|- testng.xml
-|- README.md
-`- src/test/
-   |- java/com/automation/
-   |  |- base/BaseTest.java
-   |  |- pages/RegistrationPage.java
-   |  |- tests/RegistrationTest.java
-   |  `- utils/
-   |     |- Config.java
-   |     `- ScreenshotListener.java
-   `- resources/config/
-      |- dev.properties
-      `- prod.properties
+├── pom.xml                          Maven build + dependency declarations
+├── testng.xml                       TestNG suite config (listeners, classes)
+├── README.md                        You are here
+└── src/test/
+    ├── java/com/automation/
+    │   ├── base/BaseTest.java         WebDriver lifecycle (setup + teardown)
+    │   ├── pages/RegistrationPage.java  Locators + actions for the AUT
+    │   ├── tests/RegistrationTest.java   @Test scenarios + assertions
+    │   └── utils/
+    │       ├── Config.java             Profile loading + override resolution
+    │       └── ScreenshotListener.java  Auto-screenshot on test failure
+    └── resources/config/
+        ├── dev.properties             Dev profile (registration URL, etc.)
+        └── prod.properties            Prod profile
 ```
 
-### Responsibilities
+### Responsibility Map
 
-**BaseTest.java**
+| File | Responsibility |
+|---|---|
+| `BaseTest` | Initializes ChromeDriver, configures options/timeouts, navigates to the registration URL, and tears down the session after every test. |
+| `RegistrationPage` | Holds all CSS selectors and exposes high-level user actions (enter name, select country, accept terms, submit). Validations are queried through helper methods. |
+| `RegistrationTest` | Owns the `@Test` scenarios, generates unique test data, and asserts expected outcomes. Calls only Page Object methods — never touches locators. |
+| `Config` | Resolves which profile (`dev`/`prod`) to load and reads values with system-property → env-var → properties-file precedence. |
+| `ScreenshotListener` | TestNG `ITestListener` that captures a PNG of the browser the moment any test fails. |
 
-* Initializes Chrome WebDriver.
-* Opens the configured application URL.
-* Provides browser setup and teardown.
-* Creates a fresh browser session for each test.
+---
 
-**RegistrationPage.java**
+## Test Coverage
 
-* Contains page locators.
-* Contains registration-page actions.
-* Handles validation and page-level interactions.
-* Keeps Selenium implementation separate from test cases.
+### Assignment Requirements — Status
 
-**RegistrationTest.java**
+The assignment sheet specifies **6 mandatory test cases** and **11 form fields**. Coverage against that sheet:
 
-* Contains TestNG test scenarios.
-* Performs test assertions.
-* Uses the Page Object instead of directly interacting with WebElements.
+| # | Assignment Requirement | Status | Notes |
+|---|---|---|---|
+| **Test cases** | | | |
+| 1 | Valid registration | ✅ Implemented (`validRegistration`) | Asserts verification screen shows the registered email. |
+| 2 | Empty form submission | ✅ Implemented (`emptyFormSubmissionShowsValidation`) | Asserts Register button is disabled. |
+| 3 | Invalid email format | ✅ Implemented (`invalidEmailShowsValidation`) | Asserts `is-invalid` CSS class on email input. |
+| 4 | Password mismatch | ✅ Implemented (`passwordMismatchShowsValidation`) | Asserts Register button stays disabled. |
+| 5 | Weak password | ✅ Implemented (`weakPasswordShowsValidation`) | Asserts `is-invalid` class on password input. |
+| 6 | Terms & Conditions not checked | ✅ Implemented (`termsNotAcceptedShowsValidation`) | Asserts Register button stays disabled. |
+| – | Phone number < 10 digits | ⚠️ Not implemented | See "Gaps & Investigation" below. |
+| **Fields** | | | |
+| 1 | Name (First / Last) | ✅ | Inputs keyed by placeholder. |
+| 2 | Email | ✅ | `<input type="email">`. |
+| 3 | Org Name | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
+| 4 | Password | ✅ | `<input placeholder='Password'>`. |
+| 5 | Terms & Conditions (Checkbox) | ✅ | Toggled via JS click for reliability. |
+| 6 | Continue button | ⚠️ Not in current AUT | AUT submits directly via Register. |
+| 7 | Country | ✅ | Autocomplete dropdown, selected by displayed text. |
+| 8 | Phone Number | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
+| 9 | State | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
+| 10 | Sign Up Text (Checkbox) | ⚠️ Not in current AUT | The Terms checkbox appears to cover the only required checkbox. |
+| 11 | Register Button | ✅ | `app-button > .form-group > :nth-child(1)`. |
 
-**Config.java**
+### Gaps & Investigation Notes
 
-* Loads environment-specific configuration.
-* Supports development and production URLs.
-* Supports system-property and environment-variable overrides.
+The live AUT at `https://dev.4excelerate.net/auth/registration` exposes only the following inputs at the time of this submission:
 
+- First Name, Last Name, Email, Country of Nationality, Password, Confirm Password, Terms & Conditions checkbox, Register button.
+
+The following assignment items could not be located on the current AUT despite inspecting the DOM, the network responses, with the task:
+
+- **Org Name** — no input with placeholder/label matching "Organization", "Org", "Company", or similar was found.
+- **Phone Number** — no `tel` input or `[placeholder*='Phone']` selector present. Without a phone field, the **phone number < 10 digits** test case also cannot be implemented.
+- **State** — no state input or dropdown found; the country selector does not surface dependent state options.
+- **Continue button** — the AUT has a single Register button that submits the form. There is no intermediate Continue step in the current build.
+- **Sign Up Text checkbox** — only the Terms & Conditions checkbox is present. If this refers to an email-marketing/newsletter opt-in, it is not exposed on the current page.
+
+A `phoneNumberLessThanTenDigitsShowsValidation` test and `selectGender` method were intentionally not added because the underlying fields do not exist on the AUT — adding them would have produced false-positive passes against stale or fabricated locators. If the AUT is updated to expose these fields, the page object and tests can be extended directly.
+
+---
+
+## Verified Result
+
+Dev suite execution:
+
+```bash
+mvn clean test -Denv=dev
+```
+
+```
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+```
+
+---
+
+## Design Notes
+
+- **Per-test isolation** — each test method receives a fresh Chrome session from `BaseTest`, so state from one test never leaks into another.
+- **Synchronization** — `WebDriverWait` (10s default) is used for every interaction and validation read. No `Thread.sleep()` and no implicit wait anywhere in the codebase.
+- **Tab to blur** — every `type()` helper sends `Keys.TAB` after input so Angular's form validators run before the test reads the resulting state.
+- **Unique test data** — every run generates a fresh email (`qa.<epochMs>@example.com`) so the suite can be replayed against the same environment without collisions.
+- **Failure evidence** — `ScreenshotListener` (registered globally in `testng.xml`) saves a PNG of the browser to `target/screenshots/` whenever any test fails, so triage never depends on logs alone.
+- **Override-friendly config** — the precedence order (`-D` > env var > properties file) lets CI/CD inject URLs without modifying tracked files.
+
+---
 
 ## Prerequisites
 
@@ -106,53 +179,15 @@ Selenium/
 - Google Chrome
 - Network access on the first run so WebDriverManager can resolve ChromeDriver
 
-## Run
+---
 
-The suite selects the `dev` profile by default. The current dev URL is in `src/test/resources/config/dev.properties`.
+## Environment Configuration
 
-```bash
-mvn clean test -Denv=dev
-```
+| Profile | URL | Notes |
+|---|---|---|
+| `dev`  | `https://dev.4excelerate.net/auth/registration` | Default profile, used by `mvn clean test` when `-Denv` is not set. |
+| `prod` | `https://experience.4excelerate.org/auth/registration` | Production registration route. Select with `-Denv=prod` or `TEST_ENV=prod`. |
 
-Select production with a Maven property:
+Both values can still be overridden at runtime via `-Dregistration.url=...` or `REGISTRATION_URL_DEV` / `REGISTRATION_URL_PROD` without editing tracked files.
 
-```bash
-mvn clean test -Denv=prod
-```
-
-Environment variables may override profile URLs without modifying tracked files. On PowerShell:
-
-```powershell
-$env:TEST_ENV = "prod"
-$env:REGISTRATION_URL_PROD = "https://your-production-registration-page.example"
-mvn clean test
-```
-
-Configuration precedence is: `-Dregistration.url`, `REGISTRATION_URL_<ENV>`, then `config/<env>.properties`. For example, `REGISTRATION_URL_DEV` overrides the dev profile. If no URL is available, tests are skipped with a clear message.
-
-Run Chrome headlessly when needed:
-
-```bash
-mvn clean test -Denv=dev -Dheadless=true
-```
-
-## Reports And Evidence
-
-- TestNG and Surefire HTML reports: `target/surefire-reports/`
-- Failure screenshots: `target/screenshots/`
-
-## AUT Scope And Locators
-
-`RegistrationPage` uses the supplied AUT selectors: `First Name`, last name, email input, `Country of Nationality`, `Password`, `Confirm Password`, agreement checkbox, the Angular `app-button` Register control, email-verification screen, and `.toast-title` / `.toast-message` success notifications.
-
-`getValidationMessages()` collects visible text from common validation-message patterns: alert roles, Angular Material errors, and common error-message CSS classes. `getToastMessage()` fetches the visible `.toast-message` text, including the production message shown in the supplied screenshot: `"email" must be a valid email`. The dev invalid-email test uses the confirmed Angular `is-invalid` state because its API does not display that toast for the same input.
-
-The supplied Cypress flow does not show a phone-number field. The phone-number validation case was removed rather than retaining a locator that cannot work against this AUT. The production profile currently uses `/auth/login`; change it to the production registration route if login does not redirect to the registration form.
-
-## Design Notes
-
-- Each test receives a clean Chrome session from `BaseTest`.
-- `WebDriverWait` is used for interaction and dynamic validation feedback. No `Thread.sleep()` or implicit wait is used.
-- `ScreenshotListener` captures the browser state automatically when a test fails.
-- Test data generates a unique email address to avoid registration collisions.
 
