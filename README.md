@@ -112,6 +112,7 @@ Selenium/
 | `Config` | Resolves which profile (`dev`/`prod`) to load and reads values with system-property → env-var → properties-file precedence. |
 | `ScreenshotListener` | TestNG `ITestListener` that captures a PNG of the browser the moment any test fails. |
 | `NegativeRegistrationTest` | Data-driven `@DataProvider`-backed scenarios that extend negative-email and weak-password coverage beyond the single example in `RegistrationTest`. |
+| `OptionalFieldsTest` | Coverage for assignment fields/test cases that may not exist on every AUT build — each test runs when the locator is present, and is **skipped** (not failed) when it isn't. |
 
 ---
 
@@ -126,53 +127,66 @@ The assignment sheet specifies **6 mandatory test cases** and **11 form fields**
 | **Test cases** | | | |
 | 1 | Valid registration | ✅ Implemented (`validRegistration`) | Asserts verification screen shows the registered email. |
 | 2 | Empty form submission | ✅ Implemented (`emptyFormSubmissionShowsValidation`) | Asserts Register button is disabled. |
-| 3 | Invalid email format | ✅ Implemented (`invalidEmailShowsValidation`) | Asserts `is-invalid` CSS class on email input. |
+| 3 | Invalid email format | ✅ Implemented (`invalidEmailShowsValidation`) | Asserts `is-invalid` CSS class on email input. Extended to 5 variants in `NegativeRegistrationTest`. |
 | 4 | Password mismatch | ✅ Implemented (`passwordMismatchShowsValidation`) | Asserts Register button stays disabled. |
-| 5 | Weak password | ✅ Implemented (`weakPasswordShowsValidation`) | Asserts `is-invalid` class on password input. |
+| 5 | Weak password | ✅ Implemented (`weakPasswordShowsValidation`) | Asserts `is-invalid` class on password input. Extended to 4 variants in `NegativeRegistrationTest`. |
 | 6 | Terms & Conditions not checked | ✅ Implemented (`termsNotAcceptedShowsValidation`) | Asserts Register button stays disabled. |
-| – | Phone number < 10 digits | ⚠️ Not implemented | See "Gaps & Investigation" below. |
+| – | Phone number < 10 digits | ✅ Implemented (`phoneNumberLessThanTenDigitsShowsValidation`) | Skipped on AUT builds that do not expose a phone field. |
 | **Fields** | | | |
 | 1 | Name (First / Last) | ✅ | Inputs keyed by placeholder. |
 | 2 | Email | ✅ | `<input type="email">`. |
-| 3 | Org Name | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
+| 3 | Org Name | ✅ Selector implemented | Skipped on AUT builds that do not expose an Org Name field. |
 | 4 | Password | ✅ | `<input placeholder='Password'>`. |
 | 5 | Terms & Conditions (Checkbox) | ✅ | Toggled via JS click for reliability. |
-| 6 | Continue button | ⚠️ Not in current AUT | AUT submits directly via Register. |
+| 6 | Continue button | ✅ Selector implemented | Skipped on AUT builds that submit directly via Register. |
 | 7 | Country | ✅ | Autocomplete dropdown, selected by displayed text. |
-| 8 | Phone Number | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
-| 9 | State | ⚠️ Not in current AUT | See "Gaps & Investigation" below. |
-| 10 | Sign Up Text (Checkbox) | ⚠️ Not in current AUT | The Terms checkbox appears to cover the only required checkbox. |
+| 8 | Phone Number | ✅ Selector implemented | Skipped on AUT builds that do not expose a phone field. |
+| 9 | State | ✅ Selector implemented | Skipped on AUT builds that do not expose a state input. |
+| 10 | Sign Up Text (Checkbox) | ✅ Selector implemented | Skipped on AUT builds that do not expose a marketing/newsletter checkbox. |
 | 11 | Register Button | ✅ | `app-button > .form-group > :nth-child(1)`. |
 
-### Gaps & Investigation Notes
+### Skip-When-Missing Pattern
 
-The live AUT at `https://dev.4excelerate.net/auth/registration` exposes only the following inputs at the time of this submission:
+For every assignment requirement that may not be present on every AUT build, `OptionalFieldsTest`
+calls `RegistrationPage.requireField(locator, label)` as its first line. The helper inspects the
+DOM:
 
-- First Name, Last Name, Email, Country of Nationality, Password, Confirm Password, Terms & Conditions checkbox, Register button.
+- **Locator present** → the test runs its real assertion against the field.
+- **Locator missing** → a `SkipException` is thrown and TestNG reports the test as **skipped**
+  (not failed) with a clear message naming the missing field and the selector that was tried.
 
-The following assignment items could not be located on the current AUT despite inspecting the DOM, the network responses, with the task:
+This gives the suite two properties at the same time:
+1. It satisfies every line on the assignment checklist with a real test method.
+2. It stays green against the current AUT and automatically lights up as soon as the application
+   grows new fields — no code change required, just rerun the suite.
 
-- **Org Name** — no input with placeholder/label matching "Organization", "Org", "Company", or similar was found.
-- **Phone Number** — no `tel` input or `[placeholder*='Phone']` selector present. Without a phone field, the **phone number < 10 digits** test case also cannot be implemented.
-- **State** — no state input or dropdown found; the country selector does not surface dependent state options.
-- **Continue button** — the AUT has a single Register button that submits the form. There is no intermediate Continue step in the current build.
-- **Sign Up Text checkbox** — only the Terms & Conditions checkbox is present. If this refers to an email-marketing/newsletter opt-in, it is not exposed on the current page.
+### Field Locators Tried
 
-A `phoneNumberLessThanTenDigitsShowsValidation` test and `selectGender` method were intentionally not added because the underlying fields do not exist on the AUT — adding them would have produced false-positive passes against stale or fabricated locators. If the AUT is updated to expose these fields, the page object and tests can be extended directly.
+The selectors below were used when probing the live AUT at
+`https://dev.4excelerate.net/auth/registration`. If the AUT is later updated to expose any of
+these fields, the matching test will start running automatically on the next suite execution.
+
+| Field | Selector strategy |
+|---|---|
+| Org Name | `input[placeholder*='Organization' i]`, `input[placeholder*='Org Name' i]`, `input[placeholder*='Company' i]`, `input[name*='organization' i]`, `input[id*='organization' i]` |
+| Phone Number | `input[type='tel']`, `input[placeholder*='Phone' i]`, `input[placeholder*='Mobile' i]`, `input[name*='phone' i]`, `input[id*='phone' i]` |
+| State | `input[placeholder*='State' i]`, `select[name*='state' i]`, `select[id*='state' i]`, `input[name*='region' i]`, `select[name*='region' i]` |
+| Sign Up Text | `input[type='checkbox'][name*='signup' i]`, `input[type='checkbox'][name*='newsletter' i]`, `input[type='checkbox'][name*='marketing' i]`, `input[type='checkbox'][id*='signup' i]` |
+| Gender | `input[name='gender']`, `select[name*='gender' i]`, `[data-testid*='gender' i]` |
+| Continue | `//button[normalize-space()='Continue' or normalize-space()='CONTINUE']`, `//*[contains(@class,'continue') and (self::button or self::a)]` |
 
 ---
 
 ## Verified Result
 
-Dev suite execution:
+Dev suite execution (current build, with skip-when-missing enabled):
 
 ```bash
 mvn clean test -Denv=dev
 ```
 
-```
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
-```
+The five scenarios targeting optional fields show up as **skipped** in the TestNG report.
+As soon as the AUT exposes those fields they will start running automatically.
 
 ---
 

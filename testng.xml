@@ -21,6 +21,8 @@
             <class name="com.automation.tests.RegistrationTest"/>
             <!-- Data-driven negative scenarios: each @DataProvider row runs as its own test. -->
             <class name="com.automation.tests.NegativeRegistrationTest"/>
+            <!-- Optional-field scenarios: skip cleanly when the AUT does not expose the locator. -->
+            <class name="com.automation.tests.OptionalFieldsTest"/>
         </classes>
     </test>
 </suite>

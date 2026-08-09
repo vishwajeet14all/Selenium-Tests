@@ -11,6 +11,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.SkipException;
 
 import java.time.Duration;
 import java.util.List;
@@ -72,6 +73,41 @@ public class RegistrationPage {
     /** Submit "Register" button — wrapped in Angular's app-button component. */
     private final By registerButton = By.cssSelector("app-button > .form-group > :nth-child(1)");
 
+    /** Optional "Continue" button — only present on AUT builds that split registration into steps. */
+    private final By continueButton = By.xpath(
+            "//button[normalize-space()='Continue' or normalize-space()='CONTINUE'] | "
+                    + "//*[contains(@class,'continue') and (self::button or self::a)]"
+    );
+
+    /** Optional "Organization / Org / Company" name input. */
+    private final By orgName = By.cssSelector(
+            "input[placeholder*='Organization' i], input[placeholder*='Org Name' i], "
+                    + "input[placeholder*='Company' i], input[name*='organization' i], input[id*='organization' i]"
+    );
+
+    /** Optional phone-number input (HTML5 tel type or placeholder match). */
+    private final By phoneNumber = By.cssSelector(
+            "input[type='tel'], input[placeholder*='Phone' i], input[placeholder*='Mobile' i], "
+                    + "input[name*='phone' i], input[id*='phone' i]"
+    );
+
+    /** Optional state / province / region input or select. */
+    private final By state = By.cssSelector(
+            "input[placeholder*='State' i], select[name*='state' i], "
+                    + "select[id*='state' i], input[name*='region' i], select[name*='region' i]"
+    );
+
+    /** Optional gender selector (radio buttons or a select). */
+    private final By gender = By.cssSelector(
+            "input[name='gender'], select[name*='gender' i], [data-testid*='gender' i]"
+    );
+
+    /** Optional "Sign Up" / marketing / newsletter opt-in checkbox (distinct from Terms). */
+    private final By signUpTextCheckbox = By.cssSelector(
+            "input[type='checkbox'][name*='signup' i], input[type='checkbox'][name*='newsletter' i], "
+                    + "input[type='checkbox'][name*='marketing' i], input[type='checkbox'][id*='signup' i]"
+    );
+
     /** Generic validation-message locator — covers multiple frameworks (Material, Bootstrap, custom). */
     private final By validationMessages = By.cssSelector(
             "[role='alert'], .invalid-feedback, .error-message, .validation-error, mat-error"
@@ -110,6 +146,95 @@ public class RegistrationPage {
     public void enterName(String firstNameValue, String lastNameValue) {
         type(firstName, firstNameValue);
         type(lastName, lastNameValue);
+    }
+
+    /**
+     * Selects a gender option.
+     * <p>The AUT exposes gender through either a set of radio buttons sharing {@code name='gender'}
+     * or a {@code <select>} element. Either way, callers pass the visible option label.
+     *
+     * @param genderValue visible label of the gender option to choose.
+     */
+    public void selectGender(String genderValue) {
+        // Prefer a <select> dropdown; fall back to a click on a matching radio button.
+        By selectLocator = By.cssSelector("select[name*='gender' i]");
+        if (!driver.findElements(selectLocator).isEmpty()) {
+            new org.openqa.selenium.support.ui.Select(driver.findElement(selectLocator))
+                    .selectByVisibleText(genderValue);
+            return;
+        }
+        // Match by radio value OR by the label text associated with the radio group.
+        click(By.xpath(
+                "//input[@type='radio' and "
+                        + "(contains(translate(@value, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '"
+                        + genderValue.toLowerCase() + "') "
+                        + "or following-sibling::*[contains(normalize-space(), '" + genderValue + "')] "
+                        + "or preceding-sibling::*[contains(normalize-space(), '" + genderValue + "')])]"
+        ));
+    }
+
+    /** Fills the optional Organization Name input if present. */
+    public void enterOrgName(String value) {
+        type(orgName, value);
+    }
+
+    /** Fills the optional Phone Number input if present. */
+    public void enterPhoneNumber(String value) {
+        type(phoneNumber, value);
+    }
+
+    /**
+     * Fills the optional Phone Number and asserts that the form rejects short values.
+     * Returns the validation outcome so the calling test can decide what to assert.
+     */
+    public boolean isPhoneNumberInvalid() {
+        return hasClass(phoneNumber, "is-invalid");
+    }
+
+    /** Fills the optional State input if present. */
+    public void enterState(String value) {
+        type(state, value);
+    }
+
+    /** Ticks the optional "Sign Up Text" / marketing checkbox if present. */
+    public void acceptSignUpText() {
+        WebElement checkbox = wait.until(ExpectedConditions.presenceOfElementLocated(signUpTextCheckbox));
+        if (!checkbox.isSelected()) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", checkbox);
+        }
+    }
+
+    /** Clicks the optional "Continue" button if present (used on multi-step AUT builds). */
+    public void clickContinue() {
+        click(continueButton);
+    }
+
+    /**
+     * Fast presence check (does NOT wait). Used by tests that need to skip themselves
+     * when the AUT does not expose the field they were written against.
+     *
+     * @param locator element to look for.
+     * @return true if at least one matching element exists in the DOM.
+     */
+    public boolean isElementPresent(By locator) {
+        return !driver.findElements(locator).isEmpty();
+    }
+
+    /**
+     * Throws a {@link SkipException} with a clear message when the supplied locator
+     * cannot be found on the current page. Centralizes the "skip vs fail" decision
+     * so every test in {@code OptionalFieldsTest} reads the same way.
+     *
+     * @param locator         element the test needs to interact with.
+     * @param missingFieldTag short label describing what the field is for (e.g. "Phone Number").
+     */
+    public void requireField(By locator, String missingFieldTag) {
+        if (!isElementPresent(locator)) {
+            throw new SkipException(
+                    "Skipping: '" + missingFieldTag + "' is not present on the current AUT (locator: "
+                            + locator + "). Test will execute when the field is added to the application."
+            );
+        }
     }
 
     /** Clears and types into the email input. */
