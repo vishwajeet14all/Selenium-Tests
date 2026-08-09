@@ -1,0 +1,83 @@
+# =================================================================================================
+# GitHub Actions workflow for the Selenium + TestNG suite.
+#
+# Triggers:
+#   * Every push to main
+#   * Every pull request targeting main
+#
+# What it does:
+#   1. Spins up an Ubuntu runner.
+#   2. Installs JDK 17 and Google Chrome (the only browser the suite drives).
+#   3. Caches the Maven local repository so subsequent runs are faster.
+#   4. Runs the TestNG suite in headless mode against the dev profile.
+#   5. Uploads the HTML reports and any failure screenshots as downloadable artifacts,
+#      even when the build fails, so the cause of a red CI is one click away.
+# =================================================================================================
+name: Registration Automation CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel any in-flight run for the same branch when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run TestNG suite (dev, headless)
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---- 1. Check out the repository -------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ---- 2. Install JDK 17 -----------------------------------------------------------
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # ---- 3. Speed up Maven by caching the local repository --------------------------
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      # ---- 4. Install Chrome (the only browser the suite drives) ---------------------
+      # The browser-auto-install action avoids pinning a Chrome version that may go stale.
+      - name: Install Google Chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
+      # ---- 5. Run the TestNG suite ----------------------------------------------------
+      # -Dheadless=true is essential on CI because there is no display attached.
+      # mvn -B (batch mode) keeps log output deterministic.
+      - name: Run TestNG suite
+        run: mvn -B clean test -Denv=dev -Dheadless=true
+
+      # ---- 6. Publish HTML reports + failure screenshots as build artifacts ----------
+      # if: always() ensures we still get artifacts when the test step fails.
+      - name: Upload TestNG reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports
+          if-no-files-found: warn
+
+      - name: Upload failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots
+          path: target/screenshots
+          if-no-files-found: ignore

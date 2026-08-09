@@ -65,6 +65,20 @@ If no URL is configured the suite skips with a clear message rather than failing
 | Surefire HTML report | `target/surefire-reports/html/` |
 | TestNG XML results | `target/surefire-reports/testng-results.xml` |
 | Failure screenshots | `target/screenshots/<testMethod>_<epochMillis>.png` (auto-captured by `ScreenshotListener`) |
+| CI artifacts (GitHub Actions) | Downloadable from the workflow run page — `surefire-reports` and `failure-screenshots` |
+
+### Continuous Integration
+
+A GitHub Actions workflow at `.github/workflows/test.yml` runs the full suite against the
+**dev** profile in headless mode on every push and pull request to `main`. The workflow
+uploads the TestNG HTML report and any failure screenshots as build artifacts so the
+cause of a red build is one click away from the Actions tab.
+
+```yaml
+# Triggered on: push to main, pull_request to main
+# Runs: mvn clean test -Denv=dev -Dheadless=true
+# Artifacts: surefire-reports/, failure-screenshots/
+```
 
 ---
 
@@ -97,6 +111,7 @@ Selenium/
 | `RegistrationTest` | Owns the `@Test` scenarios, generates unique test data, and asserts expected outcomes. Calls only Page Object methods — never touches locators. |
 | `Config` | Resolves which profile (`dev`/`prod`) to load and reads values with system-property → env-var → properties-file precedence. |
 | `ScreenshotListener` | TestNG `ITestListener` that captures a PNG of the browser the moment any test fails. |
+| `NegativeRegistrationTest` | Data-driven `@DataProvider`-backed scenarios that extend negative-email and weak-password coverage beyond the single example in `RegistrationTest`. |
 
 ---
 

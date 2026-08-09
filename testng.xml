@@ -17,8 +17,10 @@
     </listeners>
     <test name="Registration Tests">
         <classes>
-            <!-- Contains every @Test scenario for the registration screen. -->
+            <!-- Core scenarios: 5 single-case tests covering the assignment's required behaviour. -->
             <class name="com.automation.tests.RegistrationTest"/>
+            <!-- Data-driven negative scenarios: each @DataProvider row runs as its own test. -->
+            <class name="com.automation.tests.NegativeRegistrationTest"/>
         </classes>
     </test>
 </suite>
