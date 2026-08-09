@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    TestNG suite configuration for the Registration Automation project.
+
+    How the suite is wired up:
+      * The <suite> element defines the whole run (name shown in reports).
+      * parallel="false"  -> tests run sequentially in a predictable order.
+      * verbose="2"       -> TestNG prints detailed console logs as tests run.
+      * <listeners>       -> attaches the ScreenshotListener so failures auto-capture PNGs.
+      * <test> / <classes> -> points to the single test class executed in this suite.
+-->
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="Registration Automation Suite" parallel="false" verbose="2">
     <listeners>
+        <!-- Captures a screenshot of the browser every time a test fails. -->
         <listener class-name="com.automation.utils.ScreenshotListener"/>
     </listeners>
     <test name="Registration Tests">
         <classes>
+            <!-- Contains every @Test scenario for the registration screen. -->
             <class name="com.automation.tests.RegistrationTest"/>
         </classes>
     </test>
